@@ -430,7 +430,7 @@ int main() {
     }
     simulatedAnnealing(CUSTOMERS, &unassignCustomersList, &assignedCustomersList, vehicles);
     
-    cout << "testing github 456 " << '\n';
+    cout << "testing github testing" << '\n';
     
     return 0;
 }
