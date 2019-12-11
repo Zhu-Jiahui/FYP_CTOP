@@ -36,11 +36,11 @@ int MAXCAPACITY;
 int MAXTIME;
 int TOTALCUSTOMERS;
 
-double T = 100.0;
+double T = 1000.0;
 int Imax = 100;
-int N_nonImproving = 5;
+int N_nonImproving = 10;
 double coolingRatio = 0.5;
-string path = "/Users/jiahuizhu/Desktop/SEM7/FYP/Benchmark\ Instances/DatasetsCTOP/3set/b3.txt";
+string path = "/Users/jiahuizhu/Desktop/SEM7/FYP/Benchmark\ Instances/DatasetsCTOP/1set/b8.txt";
 
 coordinate DEPOT;
 
@@ -472,7 +472,7 @@ void swap(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int> vehi
         //index2 = rand()%TOTALCUSTOMERS;
         index1 = rand()%getVehicleCustomerSize(vehicles);
         index2 = (rand()%unassignCustomersList->size())+getVehicleCustomerSize(vehicles);
-        cout << "index1 is " << index1 << '\n';
+        //cout << "index1 is " << index1 << '\n';
         
         //cout << "index2 is " << index2 << '\n';
 
@@ -916,7 +916,7 @@ void Reversion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
         }
         vehicles[vehicleNo].clear();
     }
-    showTheContent(currentArrangement);
+    //showTheContent(currentArrangement);
     //store all the customers from unassignCustomerList into currentArrangement list
     iter = unassignCustomersList->begin();
     for (i = 0; i < unassignCustomersList->size(); i++){
@@ -1624,20 +1624,25 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
     double bestProfitAfterLocalSearch = 0.0;
     double offsetProfit = 0.0;
     double equationValue = 0.0;
+    bool bestProfitUpdated = false;
     
     list<int> currentVehicle[MAXVEHICLES];
     list<int> nextVehicle[MAXVEHICLES];
     list<int> bestVehicle[MAXVEHICLES];
+    list<int> bestVehicleAfterLocalSearch[MAXVEHICLES];
     list<int> currentUnassignList;
     list<int> nextUnassignList;
     list<int> bestUnassignList;
+    list<int> bestUnassignListAfterLocalSearch;
     
     for (int i = 0; i < MAXVEHICLES; i++) {
         currentVehicle[i] = vehicles[i];
         bestVehicle[i] = vehicles[i];
+        nextVehicle[i] = vehicles[i];
     }
     currentUnassignList = *unassignCustomersList;
     bestUnassignList = *unassignCustomersList;
+    nextUnassignList = *unassignCustomersList;
     
     
     currentProfit = getTotalProfit(CUSTOMERS, currentVehicle);
@@ -1646,27 +1651,29 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
     //cout << "best profit is " << bestProfit << '\n';
     
     while (N < N_nonImproving) {
+        
+        
+        
         for (I = 0; I < Imax; I++){
             p = (double) rand() / (RAND_MAX);
             //cout << "p is " << p << '\n';
             
             if (p <= 1.0/3.0) {
                 //cout << "Choose Swap" << '\n';
-                swap(CUSTOMERS, unassignCustomersList, vehicles);
+                swap(CUSTOMERS, &nextUnassignList, nextVehicle);
             }
             else if (p <= 2.0/3.0 && p > 1.0/3.0) {
                 //cout << "Choose Insertion" << '\n';
-                insertion(CUSTOMERS, unassignCustomersList, vehicles);
-                
+                insertion(CUSTOMERS, &nextUnassignList, nextVehicle);
             }
             else if (p <= 3.0/3.0 && p > 2.0/3.0) {
                 //cout << "Choose Reversion" <<'\n';
-                Reversion(CUSTOMERS, unassignCustomersList, vehicles);
+                Reversion(CUSTOMERS, &nextUnassignList, nextVehicle);
             }
             
             //if F(Y) better than F(X)?
             //cout << "current profit is " << currentProfit << '\n';
-            nextProfit = getTotalProfit(CUSTOMERS, vehicles);
+            nextProfit = getTotalProfit(CUSTOMERS, nextVehicle);
             //cout << "next Profit is " << nextProfit << '\n';
             offsetProfit = nextProfit - currentProfit;
             //cout << "offset profit is " << offsetProfit << '\n';
@@ -1674,11 +1681,11 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
                 //cout << "offset profit is positive, currentVehicle = next Vehicle " << '\n';
                 for (int i = 0; i < MAXVEHICLES; i++) {
                     currentVehicle[i].clear();
-                    currentVehicle[i] = vehicles[i];
+                    currentVehicle[i] = nextVehicle[i];
                 }
                 currentProfit = nextProfit;
                 currentUnassignList.clear();
-                currentUnassignList = *unassignCustomersList;
+                currentUnassignList = nextUnassignList;
             } else {
                 //cout << "offset profit is negative" << '\n';
                 r = (double) rand() / (RAND_MAX);
@@ -1689,14 +1696,22 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
                     //cout << "r is smaller than equation value, accept current vehicle" << '\n';
                     for (int i = 0; i < MAXVEHICLES; i++) {
                         currentVehicle[i].clear();
-                        currentVehicle[i] = vehicles[i];
+                        currentVehicle[i] = nextVehicle[i];
                         
                     }
                     currentUnassignList.clear();
-                    currentUnassignList = *unassignCustomersList;
+                    currentUnassignList = nextUnassignList;
                     currentProfit = nextProfit;
                 } else {
                     //cout << "r is bigger than equation value, does not accept current vehicle" << '\n';
+                    for (int i = 0; i < MAXVEHICLES; i++) {
+                        nextVehicle[i].clear();
+                        nextVehicle[i] = currentVehicle[i];
+                    }
+                    nextProfit = currentProfit;
+                    nextUnassignList.clear();
+                    nextUnassignList = currentUnassignList;
+                    
                     continue;
                 }
             }
@@ -1715,6 +1730,7 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
                 }
                 bestUnassignList.clear();
                 bestUnassignList = currentUnassignList;
+                bestProfitUpdated = true;
             } else {
                 //cout << "current profit is not better than best profit " << '\n';
                 //cout << "current profit is " << currentProfit << '\n';
@@ -1727,19 +1743,18 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
         
         T = T*coolingRatio;
         //local search for the best vehicle
-        //testTotalCustomers(CUSTOMERS, bestVehicle, &bestUnassignList);
-        localSearch(CUSTOMERS, bestVehicle, &bestUnassignList);
+        if (bestProfitUpdated == true) {
+            localSearch(CUSTOMERS, bestVehicle, &bestUnassignList);
+            N = 0;
+        } else {
+            N++;
+        }
+        
         testTotalCustomers(CUSTOMERS, bestVehicle, &bestUnassignList);
         bestProfitAfterLocalSearch = getTotalProfit(CUSTOMERS, bestVehicle);
         cout << "best profit after local search is " << bestProfitAfterLocalSearch << '\n';
-        //termination criterial
-        if (currentProfit == bestProfitAfterLocalSearch) {
-            N++;
-        }
-        else if (bestProfitAfterLocalSearch > currentProfit) {
-            currentProfit = bestProfitAfterLocalSearch;
-            N = 0; //reset N
-        }
+        
+        bestProfitUpdated = false;
     }
     
 }
