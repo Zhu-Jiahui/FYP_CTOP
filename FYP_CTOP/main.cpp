@@ -36,11 +36,11 @@ int MAXCAPACITY;
 int MAXTIME;
 int TOTALCUSTOMERS;
 
-double T = 1000.0;
-int Imax = 100;
+double T = 500.0;
+int Imax = 10;
 int N_nonImproving = 10;
 double coolingRatio = 0.5;
-string path = "/Users/jiahuizhu/Desktop/SEM7/FYP/Benchmark\ Instances/DatasetsCTOP/1set/b8.txt";
+string path = "/Users/jiahuizhu/Desktop/SEM7/FYP/Benchmark\ Instances/DatasetsCTOP/1set/b10.txt";
 
 coordinate DEPOT;
 
@@ -641,7 +641,7 @@ void swap(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int> vehi
         i = 0;
         j = 0;
     }
-    cout << "swap complete " << '\n';
+    //cout << "swap complete " << '\n';
     
 }
     
@@ -661,7 +661,7 @@ void insertion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
     list<int>::iterator iter1;
     list<int>::iterator iter2;
     
-    cout << "entering insert function " << '\n';
+    //cout << "entering insert function " << '\n';
     if (getVehicleCustomerSize(vehicles) == 0) {
         cout << "vehicle is empty in insertion" << '\n';
         return;
@@ -850,7 +850,7 @@ void insertion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
         i = 0;
         j = 0;
     }
-    cout << "insertion complete " << '\n';
+    //cout << "insertion complete " << '\n';
 }
 
 void Reversion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int> vehicles[]){
@@ -880,7 +880,7 @@ void Reversion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
         return;
     }
     
-    cout << "entering reversion function" << '\n';
+    //cout << "entering reversion function" << '\n';
     while (indexCheck == false){
         
         //index1 = rand()%TOTALCUSTOMERS;
@@ -1020,7 +1020,7 @@ void Reversion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
     //cout << "unassignCustomer now contains ";
     //showTheContent(*unassignCustomersList);
     
-    cout << "Reversion Completed" << '\n';
+    //cout << "Reversion Completed" << '\n';
 }
 
 void localSwapWithinOnePath(customer CUSTOMERS[], list<int> vehicles[]) {
@@ -1090,7 +1090,7 @@ void localSwapWithinOnePath(customer CUSTOMERS[], list<int> vehicles[]) {
             }
         }
     }
-    cout << "local swap within one path is done " << '\n';
+    //cout << "local swap within one path is done " << '\n';
     //cout << "the vehicle now look like this ";
     //showTheContent(vehicles[leastRemainingVehicle]);
     //cout << "the travel time now is " << leastRemainingTime << '\n';
@@ -1195,7 +1195,7 @@ void localSwapWithinTwoPath(customer CUSTOMERS[], list<int> vehicles[]) {
     //showTheContent(vehicles[leastRemainingVehicle]);
     //showTheContent(vehicles[secondLeastRemainingVehicle]);
     //cout << "the total travel time now is " << currentTotalTravelTime << '\n';
-    cout << "local swap between two pathes is done " << '\n';
+    //cout << "local swap between two pathes is done " << '\n';
 }
 
 void localReversion(customer CUSTOMERS[], list<int> vehicles[]) {
@@ -1279,7 +1279,7 @@ void localReversion(customer CUSTOMERS[], list<int> vehicles[]) {
     //cout << "the vehicle now look like this ";
     //showTheContent(vehicles[leastRemainingVehicle]);
     //cout << "travel time is now " << leastRemainingTime << '\n';
-    cout << "local reversion is done " << '\n';
+    //cout << "local reversion is done " << '\n';
     
 }
 
@@ -1386,7 +1386,7 @@ void localInsertBetweenPaths(customer CUSTOMERS[], list<int> vehicles[]) {
         }
     }
     
-    cout << "local insertion Between paths is done " << '\n';
+    //cout << "local insertion Between paths is done " << '\n';
 }
 
 
@@ -1496,7 +1496,7 @@ void localInsertUnassign(customer CUSTOMERS[], list<int> vehicles[], list<int>* 
         
         
     }
-    cout << "local insertion from unassign list is done " << '\n';
+    //cout << "local insertion from unassign list is done " << '\n';
 }
     
     
@@ -1590,7 +1590,7 @@ void localReplaceAssignWithUnassign(customer CUSTOMERS[], list<int> vehicles[], 
         i++;
         bestRemainingTime = 999;
     }
-    cout << "local replace of assign list with unassign list is done " << '\n';
+    //cout << "local replace of assign list with unassign list is done " << '\n';
 }
 
 
@@ -1652,23 +1652,33 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
     
     while (N < N_nonImproving) {
         
-        
-        
         for (I = 0; I < Imax; I++){
             p = (double) rand() / (RAND_MAX);
             //cout << "p is " << p << '\n';
             
-            if (p <= 1.0/3.0) {
-                //cout << "Choose Swap" << '\n';
-                swap(CUSTOMERS, &nextUnassignList, nextVehicle);
+            if (p <= 1.0/6.0) {
+                //cout << "Choose local Swap within one path" << '\n';
+                localSwapWithinOnePath(CUSTOMERS, nextVehicle);
             }
-            else if (p <= 2.0/3.0 && p > 1.0/3.0) {
-                //cout << "Choose Insertion" << '\n';
-                insertion(CUSTOMERS, &nextUnassignList, nextVehicle);
+            else if (p <= 2.0/6.0 && p > 1.0/6.0) {
+                //cout << "Choose local swap within two pathes " << '\n';
+                localSwapWithinTwoPath(CUSTOMERS, nextVehicle);
             }
-            else if (p <= 3.0/3.0 && p > 2.0/3.0) {
-                //cout << "Choose Reversion" <<'\n';
-                Reversion(CUSTOMERS, &nextUnassignList, nextVehicle);
+            else if (p <= 3.0/6.0 && p > 2.0/6.0) {
+                //cout << "Choose local Reversion" <<'\n';
+                localReversion(CUSTOMERS, nextVehicle);
+            }
+            else if (p <= 4.0/6.0 && p > 3.0/6.0) {
+                //cout << "Choose local insert" << '\n';
+                localInsertBetweenPaths(CUSTOMERS, nextVehicle);
+            }
+            else if (p <= 5.0/6.0 && p > 4.0/6.0) {
+                //cout << "Choose local insertion from unassign" <<'\n';
+                localInsertUnassign(CUSTOMERS, nextVehicle, &nextUnassignList);
+            }
+            else if (p <= 6.0/6.0 && p > 5.0/6.0) {
+                //cout << "Choose local replace assign with unassign" << '\n';
+                localReplaceAssignWithUnassign(CUSTOMERS, nextVehicle, &nextUnassignList);
             }
             
             //if F(Y) better than F(X)?
@@ -1744,7 +1754,7 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
         T = T*coolingRatio;
         //local search for the best vehicle
         if (bestProfitUpdated == true) {
-            localSearch(CUSTOMERS, bestVehicle, &bestUnassignList);
+            //localSearch(CUSTOMERS, bestVehicle, &bestUnassignList);
             N = 0;
         } else {
             N++;
@@ -1775,8 +1785,8 @@ int main() {
     
 
     initialSolution(CUSTOMERS, &unassignCustomersList, vehicles);
-    //cout << "unassignCustomerList is = ";
-    //showTheContent(unassignCustomersList);
+    cout << "unassignCustomerList is = ";
+    showTheContent(unassignCustomersList);
     
     //for (int i = 0; i < MAXVEHICLES; i++) {
         //cout << "vehicle " << i << "contains ";
