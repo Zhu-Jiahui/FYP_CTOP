@@ -7,6 +7,7 @@
 //
 
 #include <iostream>
+#include <stdlib.h>
 #include <fstream>
 #include <sstream>
 #include <list>
@@ -36,11 +37,11 @@ int MAXCAPACITY;
 int MAXTIME;
 int TOTALCUSTOMERS;
 
-double T = 100;
-int Imax = 1000;
+double T = 1;
+int Imax = 3000;
 int N_nonImproving = 10;
-double coolingRatio = 0.5;
-string path = "/Users/jiahuizhu/Desktop/SEM7/FYP/Benchmark\ Instances/DatasetsCTOP/3set/b30.txt";
+double coolingRatio = 0.99;
+string path = "/Users/jiahuizhu/Desktop/SEM7/FYP/Benchmark\ Instances/DatasetsCTOP/1set/b5.txt";
 
 coordinate DEPOT;
 
@@ -106,6 +107,7 @@ void extractInstanceInfo() {
             if (line.find("MAXCAPACITY") != string::npos){
                 stringstream temp(line.substr(12));
                 temp >> MAXCAPACITY;
+                cout << MAXCAPACITY << '\n';
             }
             
             if (line.find("MAXTIME") != string::npos){
@@ -134,18 +136,18 @@ void getCustomers(customer CUSTOMERS[]) {
     string line;
     int numCheck = 0;
     int count = 0;
+    int lineCount = 0;
     
     inFile.open(path);
     if (inFile.is_open())
     {
-        while ( getline(inFile,line))
-        {
-            numCheck = 0;
-            stringstream temp (line);
-            temp >> numCheck;
-            if (numCheck != 0) {
+        while ( getline(inFile,line)) {
+            
+            if (lineCount >= 11 ) {
                 CUSTOMERS[count] = extractIntegerWords(line);
                 count++;
+            } else {
+                lineCount++;
             }
         }
         inFile.close();
@@ -234,6 +236,11 @@ double getVehicleTimeTaken(customer CUSTOMERS[], list<int> vehicle){ //returns t
     coordinate currentCoordinate;
     coordinate nextCoordinate;
     
+    
+    if (vehicle.empty() == true) {
+        return 0;
+    }
+    
     iter = vehicle.begin();
     
     currentCoordinate.x = DEPOT.x;
@@ -241,19 +248,27 @@ double getVehicleTimeTaken(customer CUSTOMERS[], list<int> vehicle){ //returns t
     
     nextCoordinate.x = CUSTOMERS[*iter].x;
     nextCoordinate.y = CUSTOMERS[*iter].y;
+    
     //calculate distance from depot to first customer
+    //timeTaken = CUSTOMERS[*iter].serviceTime + getEuclideanDistance(currentCoordinate, nextCoordinate);
+    timeTaken = getEuclideanDistance(currentCoordinate, nextCoordinate);
+    //cout << "vehicle contains ";
+    //showTheContent(vehicle);
+    //cout << "vehicle size is " << vehicle.size() << '\n';
+    //cout << "depot to customer " << *iter << " timeTaken = "<< timeTaken << '\n';
     
-    if (vehicle.empty() == true) {
-        return 0;
-    }
-    
-    timeTaken = timeTaken + getEuclideanDistance(currentCoordinate, nextCoordinate);
     for (i = 0; i < vehicle.size()-1; i++) {
         advance(iter, 1);
+        //cout << "currentCoordinate before replacing is " << currentCoordinate.x << " " << currentCoordinate.y << '\n';
+        //cout << "nextCoordinate before replacing is " << nextCoordinate.x << " " << nextCoordinate.y << '\n';
         currentCoordinate = nextCoordinate;
         nextCoordinate.x = CUSTOMERS[*iter].x;
         nextCoordinate.y = CUSTOMERS[*iter].y;
-        timeTaken = timeTaken + CUSTOMERS[*iter].serviceTime + getEuclideanDistance(currentCoordinate, nextCoordinate); //service time plus travel time.
+        //cout << "currentCoordinate after replacing is " << currentCoordinate.x << " " << currentCoordinate.y << '\n';
+        //cout << "nextCoordinate after replacing is " << nextCoordinate.x << " " << nextCoordinate.y << '\n';
+        timeTaken = timeTaken + getEuclideanDistance(currentCoordinate, nextCoordinate);
+        //timeTaken = timeTaken + CUSTOMERS[*iter].serviceTime + getEuclideanDistance(currentCoordinate, nextCoordinate); //service time plus travel time.
+        //cout << "depot to customer " << *iter << " timeTaken = " << timeTaken << '\n';
     }
     //calculate distance from last customer to depot.
     currentCoordinate = nextCoordinate;
@@ -262,6 +277,9 @@ double getVehicleTimeTaken(customer CUSTOMERS[], list<int> vehicle){ //returns t
     timeTaken = timeTaken + getEuclideanDistance(currentCoordinate, nextCoordinate);
     
     //cout << "vehicle's total Time Taken is " << timeTaken << '\n';
+    if (timeTaken < 0.0) {
+        abort();
+    }
     return timeTaken;
 }
 
@@ -348,8 +366,8 @@ void rankCustomer(customer CUSTOMERS[], list<int>* unassignCustomersList) {
     unassignCustomersList->reverse();
     iter = unassignCustomersList->begin();
     //for (int i = 0; i < unassignCustomersList->size(); i++) {
-        //cout << CUSTOMERS[*iter].ratio <<'\n';
-        //advance(iter, 1);
+     //   cout << CUSTOMERS[*iter].ratio <<'\n';
+     //   advance(iter, 1);
     //}
     
 }
@@ -365,6 +383,7 @@ void initialSolution(customer CUSTOMERS[], list<int>* unassignCustomersList, lis
     //srand(time(NULL)); //set random seeds with time.
     list<int>::iterator iter;
     list<int> tempVehicle;
+    //srand(time(NULL));
     
     //initialise the tracker array with from 0 to TOTALCUSTOMERS-1.
     for (i = 0; i < TOTALCUSTOMERS; i++){
@@ -453,6 +472,8 @@ void swap(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int> vehi
     list<int> tempVehicle2;
     list<int>::iterator iter1;
     list<int>::iterator iter2;
+    //srand(time(NULL));
+    
     
     if (getVehicleCustomerSize(vehicles) == 0) {
         cout << "vehicle is empty in swap" << '\n';
@@ -460,7 +481,7 @@ void swap(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int> vehi
     }
     
     if (unassignCustomersList->empty() == true) {
-        cout << "unassignCustomerList is empty" << '\n';
+        cout << "unassignCustomerList is empty 1" << '\n';
         return;
     }
 
@@ -469,8 +490,8 @@ void swap(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int> vehi
         //cout << "entering while loop" << '\n';
         //index1 = rand()%TOTALCUSTOMERS;
         //index2 = rand()%TOTALCUSTOMERS;
-        index1 = rand()%getVehicleCustomerSize(vehicles);
-        index2 = (rand()%unassignCustomersList->size())+getVehicleCustomerSize(vehicles);
+        index1 = rand()%(getVehicleCustomerSize(vehicles)-1);
+        index2 = rand()%(unassignCustomersList->size()+getVehicleCustomerSize(vehicles)-2);
         //cout << "index1 is " << index1 << '\n';
         
         //cout << "index2 is " << index2 << '\n';
@@ -579,12 +600,23 @@ void swap(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int> vehi
                 tempVehicle2 = tempVehicle1;
                 //cout << "after modifying now vehicle look like this ";
                 //showTheContent(tempVehicle1);
+                
             }
+            
             //if both vehicle satisfied constraints
             if (getVehicleTimeTaken(CUSTOMERS, tempVehicle1) <= MAXTIME && getVehicleTimeTaken(CUSTOMERS, tempVehicle2) <= MAXTIME && getVehicleCapacity(CUSTOMERS, tempVehicle1) <= MAXCAPACITY && getVehicleCapacity(CUSTOMERS, tempVehicle2) <= MAXCAPACITY) {
+                vehicles[i].clear();
                 vehicles[i] = tempVehicle1;
+                vehicles[j].clear();
                 vehicles[j] = tempVehicle2;
                 swapSuccessful = true;
+                //cout << "both customer in vehicle " << '\n';
+                //cout << "vehicle 1 capacity " << getVehicleCapacity(CUSTOMERS, vehicles[i]) << '\n';
+                //cout << "vehicle 1 time taken " << getVehicleTimeTaken(CUSTOMERS, vehicles[i]) << '\n';
+                //cout << "vehicle 2 capacity " << getVehicleCapacity(CUSTOMERS, vehicles[j]) << '\n';
+                //cout << "vehicle 2 time taken " << getVehicleTimeTaken(CUSTOMERS, vehicles[j]) << '\n';
+               
+                
                 //cout << "swap successful!!" << '\n';
                 //cout << "vehicle i now look like this ";
                 //showTheContent(vehicles[i]);
@@ -601,9 +633,14 @@ void swap(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int> vehi
         //if first customer in vehicle and second customer in unassignlist
         if (customer1InVehicleList == true && customer2InVehicleList == false) {
             if (getVehicleTimeTaken(CUSTOMERS, tempVehicle1) <= MAXTIME && getVehicleCapacity(CUSTOMERS, tempVehicle1) <= MAXCAPACITY) {
+                vehicles[i].clear();
                 vehicles[i] = tempVehicle1;
+                unassignCustomersList->clear();
                 *unassignCustomersList = tempVehicle2;
                 swapSuccessful = true;
+                //cout << "first customer in vehicle second customer in unassignlist " << '\n';
+                //cout << "vehicle 1 capacity " << getVehicleCapacity(CUSTOMERS, vehicles[i]) << '\n';
+                //cout << "vehicle 1 time taken " << getVehicleTimeTaken(CUSTOMERS, vehicles[i]) << '\n';
                 //cout << "swap successful!!" << '\n';
                 //cout << "vehicle i now look like this ";
                 //showTheContent(vehicles[i]);
@@ -618,27 +655,9 @@ void swap(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int> vehi
                 //showTheContent(*unassignCustomersList);
             }
         }
-        //if first customer in unassignlist and second customer in vehicle
-        if (customer1InVehicleList == false && customer2InVehicleList == true) {
-            if (getVehicleTimeTaken(CUSTOMERS, tempVehicle2) <= MAXTIME && getVehicleCapacity(CUSTOMERS, tempVehicle2) <= MAXCAPACITY) {
-                *unassignCustomersList = tempVehicle1;
-                vehicles[j] = tempVehicle2;
-                swapSuccessful = true;
-                //cout << "swap successful!!" << '\n';
-                //cout << "vehicle j now look like this ";
-                //showTheContent(vehicles[j]);
-                //cout << "unassignlist look like this ";
-                //showTheContent(*unassignCustomersList);
-            } else {
-                //cout << "constraint not met, swap is not carried out 3" << '\n';
-                //cout << "vehicle j now look like this ";
-                //showTheContent(vehicles[j]);
-                //cout << "unassignlist look like this ";
-                //showTheContent(*unassignCustomersList);
-            }
-        }
         i = 0;
         j = 0;
+        
     }
     //cout << "swap complete " << '\n';
     
@@ -659,6 +678,7 @@ void insertion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
     list<int> tempVehicle2;
     list<int>::iterator iter1;
     list<int>::iterator iter2;
+    //srand(time(NULL));
     
     //cout << "entering insert function " << '\n';
     if (getVehicleCustomerSize(vehicles) == 0) {
@@ -666,7 +686,7 @@ void insertion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
         return;
     }
     if (unassignCustomersList->empty() == true) {
-        cout << "unassignCustomerList is empty" << '\n';
+        cout << "unassignCustomerList is empty 2" << '\n';
         return;
     }
     while (insertSuccessful == false) {
@@ -677,8 +697,9 @@ void insertion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
         //index2 = rand()%TOTALCUSTOMERS;
         //cout << "index2 is " << index2 << '\n';
         index1 = rand()%getVehicleCustomerSize(vehicles);
-        cout << "index1 is " << index1 << '\n';
-        index2 = (rand()%unassignCustomersList->size())+getVehicleCustomerSize(vehicles);
+        //cout << "index1 is " << index1 << '\n';
+        int tempNo = unassignCustomersList->size() + getVehicleCustomerSize(vehicles);
+        index2 = rand()%tempNo;
         cout << "index2 is " << index2 << '\n';
         if (index1 == index2) { //if i and j are pointing at the same customer, choose random number again
             //cout << "index1==index2 detacted, next iteration" << '\n';
@@ -689,7 +710,6 @@ void insertion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
         while (vehicles[i].empty() == true) { //if found a empty vehicle, check next vehicle
             i++;
         }
-        cout << "here 2" << '\n';
         while (vehicles[i].size() <= index1) { //check which vehicle is it in;
             index1 = index1 - vehicles[i].size();
             i++;
@@ -711,7 +731,6 @@ void insertion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
                 j++;
             }
             
-            
             while (vehicles[j].size() <= index2) { //check which vehicle is it in;
                 index2 = index2 - vehicles[j].size();
                 j++;
@@ -719,7 +738,7 @@ void insertion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
             tempVehicle2 = vehicles[j];
             iter2 = tempVehicle2.begin();
             advance(iter2, index2); //get customer number from the vehicle
-            //cout << "The second customer Chosen is " << *iter2 << '\n';
+            cout << "The second customer Chosen is " << *iter2 << '\n';
             //cout << "the vehicle now look like this ";
             //showTheContent(vehicles[j]);
         } else { //index2 is in unassignCustomerList
@@ -729,8 +748,8 @@ void insertion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
             tempVehicle2 = *unassignCustomersList;
             iter2 = tempVehicle2.begin();
             advance(iter2, index2); //get customer number from the unassignCustomerList.
-            //cout << "index2 is pointing to a customer in unassignCustomerList ";
-            //cout << "the Customer is " << *iter2 << '\n';
+            cout << "index2 is pointing to a customer in unassignCustomerList ";
+            cout << "the Customer is " << *iter2 << '\n';
             //cout << "unassign list now look like this ";
             //showTheContent(*unassignCustomersList);
         }
@@ -835,7 +854,7 @@ void insertion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
         i = 0;
         j = 0;
     }
-    //cout << "insertion complete " << '\n';
+    cout << "insertion complete " << '\n';
 }
 
 void Reversion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int> vehicles[]){
@@ -856,6 +875,7 @@ void Reversion(customer CUSTOMERS[], list<int>* unassignCustomersList, list<int>
     list<int>::iterator iter;
     list<int>::iterator iter1;
     list<int>::iterator iter2;
+    //srand(time(NULL));
     
     
     vehicleSize = getVehicleCustomerSize(vehicles);
@@ -1168,10 +1188,12 @@ void localSwapWithinTwoPath(customer CUSTOMERS[], list<int> vehicles[]) {
             nextTotalTravelTime = leastRemainingTime + secondLeastRemainingTime;
             
             //if the swap reduces the total travel time and does not violate maxtime constraint
-            if (nextTotalTravelTime < currentTotalTravelTime && leastRemainingTime <= MAXTIME && secondLeastRemainingTime <= MAXTIME) {
+            if (nextTotalTravelTime < currentTotalTravelTime && leastRemainingTime <= MAXTIME && secondLeastRemainingTime <= MAXTIME && getVehicleCapacity(CUSTOMERS, tempVehicle1) <= MAXCAPACITY && getVehicleCapacity(CUSTOMERS, tempVehicle2) <= MAXCAPACITY) {
                 //cout << "current total travel time is smaller than the current total travel time " << '\n';
                 currentTotalTravelTime = nextTotalTravelTime;
+                vehicles[leastRemainingVehicle].clear();
                 vehicles[leastRemainingVehicle] = tempVehicle1;
+                vehicles[secondLeastRemainingVehicle].clear();
                 vehicles[secondLeastRemainingVehicle] = tempVehicle2;
             }
         }
@@ -1377,13 +1399,13 @@ void localInsertBetweenPaths(customer CUSTOMERS[], list<int> vehicles[]) {
 
 void localInsertUnassign(customer CUSTOMERS[], list<int> vehicles[], list<int>* unassignCustomerList) {
     //unscheduled nodes are sorted in descending order of their valuation just like in the initial solution generation stage. Starting from the first unscheduled nodes with the highest valuation, insert node to the position that gives the least addition of the total travel time. Repeat until all unscheduled nodes are inserted.
-    int currentRemainingTime = 0;
-    int nextRemainingTime = 0;
-    int increaseInTime = 0;
+    double currentRemainingTime = 0.0;
+    double nextRemainingTime = 0.0;
+    double increaseInTime = 0.0;
     int i = 0;
     int j = 0;
     int k = 0;
-    int bestTime = 999;
+    double bestTime = 999.9;
     //int bestUnassignCustomer = 0;
     int bestPath = 0;
     int bestInsertLocation = 0;
@@ -1396,7 +1418,7 @@ void localInsertUnassign(customer CUSTOMERS[], list<int> vehicles[], list<int>* 
     bool potentialInsert = false;
     
     if (unassignCustomerList->empty() == true) {
-        cout << "unassignCustomerList is empty" << '\n';
+        cout << "unassignCustomerList is empty 3" << '\n';
         return;
     }
     //search ENTIRE vehicle for customers in ONE path
@@ -1416,35 +1438,46 @@ void localInsertUnassign(customer CUSTOMERS[], list<int> vehicles[], list<int>* 
         while (j < MAXVEHICLES) {
             
             //cout << "processing vehicle " << j << '\n';
+            
             tempVehicle = vehicles[j];
+            //cout << "vehicle " << j << " contains ";
+            //showTheContent(tempVehicle);
             currentRemainingTime = getVehicleTimeTaken(CUSTOMERS, tempVehicle);
             //cout << "current remaining time is " << currentRemainingTime << '\n';
             if (tempVehicle.empty() == true) {
+                //cout << "tempVehicle is empty " << '\n';
                 tempVehicle.push_back(tempCustomer);
                 nextRemainingTime = getVehicleTimeTaken(CUSTOMERS, tempVehicle);
+                //cout << "next remaining time is " << nextRemainingTime << '\n';
                 increaseInTime = nextRemainingTime - currentRemainingTime;
                 if (increaseInTime < bestTime) {
                     bestTime = increaseInTime;
                     bestPath = j;
                     bestInsertLocation = k;
                     potentialInsert = true;
-                    j++;
-                    continue;
                 }
+                j++;
+                continue;
             }
+            
             iter2 = tempVehicle.begin();
             k = 0;
               
             //search ONE path for ONE customer insertion
             while (k < tempVehicle.size()) {
                 //get current Remaining time
-                tempVehicle = vehicles[j];
-                iter2 = tempVehicle.begin();
-                advance(iter2, k);
                 
+                advance(iter2, k);
+                //cout << "k is " << k << " tempVehicle size is " << tempVehicle.size() << '\n';
                 tempVehicle.insert(iter2, tempCustomer);
+                //cout << "after insert, tempVehicle is ";
+                //showTheContent(tempVehicle);
                 nextRemainingTime = getVehicleTimeTaken(CUSTOMERS, tempVehicle);
+                //cout << "nextRemainingTime is " << nextRemainingTime << '\n';
+                
                 increaseInTime = nextRemainingTime - currentRemainingTime;
+                //cout << "increaseIntime is " << increaseInTime << '\n';
+                //cout << "best time is " << bestTime << '\n';
                 //cout << "next remaining time is " << nextRemainingTime << '\n';
                   
                 // if does not violate path capacity and duration
@@ -1456,6 +1489,9 @@ void localInsertUnassign(customer CUSTOMERS[], list<int> vehicles[], list<int>* 
                     bestInsertLocation = k;
                     potentialInsert = true;
                 }
+                //reset tempVehicle, iter2 and increase k
+                tempVehicle = vehicles[j];
+                iter2 = tempVehicle.begin();
                 k++;
             }
             j++;
@@ -1469,8 +1505,6 @@ void localInsertUnassign(customer CUSTOMERS[], list<int> vehicles[], list<int>* 
             
             unassignCustomerList->erase(iter1);
             //cout << "insertion is true " << " best path is << " << bestPath << " best insertion location is " << bestInsertLocation << '\n';
-            
-            
             potentialInsert = false; //reset insert complete
         } else {
             i++;
@@ -1503,7 +1537,7 @@ void localReplaceAssignWithUnassign(customer CUSTOMERS[], list<int> vehicles[], 
     bool potentialReplace = false;
     
     if (unassignCustomerList->empty() == true) {
-        cout << "unassignCustomerList is empty" << '\n';
+        cout << "unassignCustomerList is empty 4" << '\n';
         return;
     }
     
@@ -1583,16 +1617,28 @@ void localSearch(customer CUSTOMERS[], list<int> bestVehicle[], list<int>* bestU
     // local search does not generate additional profit
     
     localSwapWithinOnePath(CUSTOMERS, bestVehicle);
+    //cout << "test local swap with one path ";
+    //showTheContent(*bestUnassignList);
     //cout << "local swap within one path done" << '\n';
     localSwapWithinTwoPath(CUSTOMERS, bestVehicle);
+    //cout << "test loca swap with two path ";
+    //showTheContent(*bestUnassignList);
     //cout << "local swap within two path done" << '\n';
     localReversion(CUSTOMERS, bestVehicle);
+    //cout << "test local reversion ";
+    //showTheContent(*bestUnassignList);
     //cout << "local reversion done" << '\n';
     localInsertBetweenPaths(CUSTOMERS, bestVehicle);
+    //cout << "test local insertion between pathes ";
+    //showTheContent(*bestUnassignList);
     //cout << "local insertion between paths done" <<'\n';
     localInsertUnassign(CUSTOMERS, bestVehicle, bestUnassignList);
+    //cout << "test local insert unassign ";
+    //showTheContent(*bestUnassignList);
     //cout << "local insert unassign list done" << '\n';
     localReplaceAssignWithUnassign(CUSTOMERS, bestVehicle, bestUnassignList);
+    //cout << "test local replace ";
+    //showTheContent(*bestUnassignList);
     //cout << "local replace assign with unassign" << '\n';
 }
 
@@ -1605,10 +1651,11 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
     double nextProfit = 0.0;
     double bestProfit = 0.0;
     double bestProfitAfterLocalSearch = 0.0;
+    double bestProfitBeforeLocalSearch = 0.0;
     double offsetProfit = 0.0;
     double equationValue = 0.0;
-    bool bestProfitUpdated = false;
     bool unassignListEmpty = false;
+    
     
     list<int> currentVehicle[MAXVEHICLES];
     list<int> nextVehicle[MAXVEHICLES];
@@ -1618,6 +1665,8 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
     list<int> nextUnassignList;
     list<int> bestUnassignList;
     list<int> bestUnassignListAfterLocalSearch;
+    
+    localSearch(CUSTOMERS, vehicles, unassignCustomersList);
     
     for (int i = 0; i < MAXVEHICLES; i++) {
         currentVehicle[i] = vehicles[i];
@@ -1636,22 +1685,26 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
     
     while (N < N_nonImproving && unassignListEmpty == false) {
         
+        //cout << "test " << currentProfit << '\n';
+        //cout << "best profit is " << bestProfit << '\n';
         for (I = 0; I < Imax; I++){
             p = (double) rand() / (RAND_MAX);
             //cout << "p is " << p << '\n';
             
-            if (p <= 1.0/3.0) {
+            if (p <= 1.0/2.0) {
                 //cout << "Choose Swap " << '\n';
                 swap(CUSTOMERS, &nextUnassignList, nextVehicle);
+                //testTotalCustomers(CUSTOMERS, nextVehicle, &nextUnassignList);
                 //cout << "swap done " << '\n';
             }
-            else if (p <= 2.0/3.0 && p > 1.0/3.0) {
+            //else if (p <= 2.0/3.0 && p > 1.0/3.0) {
                 //cout << "Choose insert" << '\n';
                 //insertion(CUSTOMERS, &nextUnassignList, nextVehicle);
-                localInsertUnassign(CUSTOMERS, nextVehicle, &nextUnassignList);
+                //localInsertUnassign(CUSTOMERS, nextVehicle, &nextUnassignList);
+                //localInsertBetweenPaths(CUSTOMERS, nextVehicle);
                 //cout << "insert done " << '\n';
-            }
-            else if (p <= 1 && p > 2.0/3.0) {
+            //}
+            else if (p <= 1 && p > 1.0/2.0) {
                 //cout << "Choose reversion" <<'\n';
                 Reversion(CUSTOMERS, &nextUnassignList, nextVehicle);
                 //cout << "reverse done " << '\n';
@@ -1680,11 +1733,10 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
                 equationValue = exp((offsetProfit)/T);
                 //cout << "equation value is " << equationValue << '\n';
                 if (r < equationValue) {
-                    //cout << "r is smaller than equation value, accept current vehicle" << '\n';
+                    //cout << "r = " << r << " equationValue = " << equationValue << " r smaller, accept " << '\n';
                     for (int i = 0; i < MAXVEHICLES; i++) {
                         currentVehicle[i].clear();
                         currentVehicle[i] = nextVehicle[i];
-                        
                     }
                     currentUnassignList.clear();
                     currentUnassignList = nextUnassignList;
@@ -1716,7 +1768,7 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
                 }
                 bestUnassignList.clear();
                 bestUnassignList = currentUnassignList;
-                bestProfitUpdated = true;
+                //bestProfitUpdated = true;
             } else {
                 //cout << "current profit is not better than best profit " << '\n';
                 //cout << "current profit is " << currentProfit << '\n';
@@ -1726,35 +1778,45 @@ void simulatedAnnealing(customer CUSTOMERS[], list<int>* unassignCustomersList, 
             //cout << "I is " << I << '\n';
             //cout << "vehicle has " << getVehicleCustomerSize(vehicles) << "total customers" << '\n';
             if (bestUnassignList.empty() == true) {
-                unassignListEmpty == true;
+                unassignListEmpty = true;
                 break;
             }
         }
         
         T = T*coolingRatio;
         //local search for the best vehicle
-        if (bestProfitUpdated == true) {
-            localSearch(CUSTOMERS, bestVehicle, &bestUnassignList);
-            
-            //testing if starting the loop with a vehicle that has done local search results a better solution
-            for (int i = 0; i < MAXVEHICLES; i++) {
-                currentVehicle[i] = bestVehicle[i];
-                nextVehicle[i] = bestVehicle[i];
-            }
-            currentUnassignList = bestUnassignList;
-            nextUnassignList = bestUnassignList;
-            currentProfit = bestProfit;
-            nextProfit = bestProfit;
-            
+        bestProfitBeforeLocalSearch = bestProfit;
+        if (bestProfitBeforeLocalSearch > bestProfitAfterLocalSearch) {
+            N = 0;
+        }
+        
+        cout << "best profit before local search is " << bestProfitBeforeLocalSearch << '\n';
+        
+        localSearch(CUSTOMERS, bestVehicle, &bestUnassignList);
+        bestProfitAfterLocalSearch = getTotalProfit(CUSTOMERS, bestVehicle);
+        
+        
+        
+        
+        if (bestProfitAfterLocalSearch > bestProfitBeforeLocalSearch) {
             N = 0;
         } else {
             N++;
         }
         
+        for (int i = 0; i < MAXVEHICLES; i++) {
+            currentVehicle[i] = bestVehicle[i];
+            nextVehicle[i] = bestVehicle[i];
+        }
+        currentUnassignList = bestUnassignList;
+        nextUnassignList = bestUnassignList;
+        currentProfit = bestProfitAfterLocalSearch;
+        nextProfit = bestProfitAfterLocalSearch;
+        bestProfit = bestProfitAfterLocalSearch;
+        
         testTotalCustomers(CUSTOMERS, bestVehicle, &bestUnassignList);
-        bestProfitAfterLocalSearch = getTotalProfit(CUSTOMERS, bestVehicle);
+        cout << "N is " << N << '\n';
         cout << "best profit after local search is " << bestProfitAfterLocalSearch << '\n';
-        bestProfitUpdated = false;
     }
     
 }
@@ -1765,7 +1827,7 @@ int main() {
     //for (int i=1; i<=1; i++) {
     //    path = tempPath + to_string(i) + "set/b1.txt";
     //}
-    
+    srand(time(NULL));
     extractInstanceInfo();
     customer CUSTOMERS[TOTALCUSTOMERS];
     getCustomers(CUSTOMERS);
@@ -1773,7 +1835,7 @@ int main() {
     list<int> unassignCustomersList;
     list<int> vehicles[MAXVEHICLES];
     
-
+    
     initialSolution(CUSTOMERS, &unassignCustomersList, vehicles);
     cout << "unassignCustomerList is = ";
     showTheContent(unassignCustomersList);
@@ -1784,7 +1846,7 @@ int main() {
     //}
     
     simulatedAnnealing(CUSTOMERS, &unassignCustomersList, vehicles);
-    
+    cout << "programme has finished running" << '\n';
     return 0;
 }
 
